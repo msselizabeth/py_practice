@@ -20,6 +20,10 @@
 # Каждый словарь — это одно "наблюдение" (одно вино)
 # Каждая точка(features) - это [кислотность, сахар] -> значения уже нормализированны дли использования алгоритмом 
 # label - Это метки (0 -> Красное , 1 -> белое)
+
+import math 
+from collections import Counter
+
 wine_dataset = [
     # Класс 0 ('Красное')
     {'features': [0.7, 0.3], 'label': 0},
@@ -34,75 +38,72 @@ wine_dataset = [
     {'features': [0.2, 0.6], 'label': 1}
 ]
 
-
-# --- 2. "Новая" точка (которую мы хотим классифицировать) ---
-# У нее нет метки (label), только признаки (features)
-new_point = [0.25, 0.75]
-
-import math 
-
-
-
-point_a = [1, 5, 2] 
-point_b = [3, 1, 6]
-
 #  calc disctance between point
 # v1 - point 1
 # v2 - point 2
 def euclidean_distance(v1, v2):
-    points = list(zip(v1, v2))
+    square_sum = sum((p1 - p2) ** 2 for p1, p2 in zip(v1, v2))
+    return  math.sqrt(square_sum)
 
-    sum = 0
-    for p in points:
-        sum += (p[0] - p[1]) ** 2
-        
-    result = math.sqrt(sum)
-    return result
-    
-euclidean_distance(point_a, point_b)
+# # Just to check formula 
+# point_a = [1, 5, 2] 
+# point_b = [3, 1, 6]
+# euclidean_distance(point_a, point_b)
 
 # fin closest neighbours
 def find_nearest(query_point, dataset, k=1):
-    distance_pairs = []
-    for index, item in enumerate(dataset):
-        dist_from_item = euclidean_distance(query_point, item["features"]) # calc dist for each item in dataset 
-        distance_pairs.append((dist_from_item, index))
+    distance_pairs = [(item, euclidean_distance(query_point, item["features"])) for item in dataset]
+    # print(distance_pairs) # [
+    #  ({'features': [0.7, 0.3], 'label': 0}, 0.49244289008980524),
+    # ({'features': [0.8, 0.2], 'label': 0}, 0.6264982043070835), 
+    # ({'features': [0.6, 0.4], 'label': 0}, 0.36400549446402586), 
+    # ({'features': [0.9, 0.1], 'label': 0}, 0.7632168761236874), 
+    # ({'features': [0.2, 0.8], 'label': 1}, 0.30413812651491096), 
+    # ({'features': [0.3, 0.7], 'label': 1}, 0.20615528128088306), 
+    # ({'features': [0.1, 0.9], 'label': 1}, 0.4272001872658766), 
+    # ({'features': [0.2, 0.6], 'label': 1}, 0.33541019662496846)
+    # ] 
+    
+    sorted_distance_pairs = sorted(distance_pairs, key=lambda item: item[1])
+    print(sorted_distance_pairs) #[
+        # ({'features': [0.3, 0.7], 'label': 1}, 0.20615528128088306), ({'features': [0.2, 0.8], 'label': 1}, 0.30413812651491096), ({'features': [0.2, 0.6], 'label': 1}, 0.33541019662496846), ({'features': [0.6, 0.4], 'label': 0}, 0.36400549446402586), ({'features': [0.1, 0.9], 'label': 1}, 0.4272001872658766), ({'features': [0.7, 0.3], 'label': 0}, 0.49244289008980524), ({'features': [0.8, 0.2], 'label': 0}, 0.6264982043070835), ({'features': [0.9, 0.1], 'label': 0}, 0.7632168761236874)]
+    
+    closest_k_pairs = sorted_distance_pairs[:k]
+    
+    return closest_k_pairs
     
 
-    sorted_distance_list = sorted(distance_pairs)
-    closest_k_pairs = sorted_distance_list[:k]
+def classification(query_point, dataset, k=1):
+       #  Find indices for the K closest
+    # desicion_dict = {"White(1)": 0, "Red(0)": 0}
+    LABEL_MAP = {0: "Red", 1: "White", 2: "Rose"}
     
-    #  Find indices for the K closest
-    closest_idx = []
-    closest_from_dataset =[]
-    desicion_dict = {"White(1)": 0, "Red(0)": 0}
-    for dist, index in closest_k_pairs:
-        closest_idx.append(index)
-        closest_from_dataset.append(dataset[index])
-        if dataset[index]['label'] == 1:
-            desicion_dict['White(1)'] += 1
-        else:
-            desicion_dict['Red(0)'] += 1
+    closest_k_pairs = find_nearest(query_point, dataset, k)
+    k_nearest_labels = [item['label'] for item, disct in closest_k_pairs]
     
-    final_decision = ""
-    if desicion_dict['Red(0)'] > desicion_dict['White(1)']:
-        final_decision += "It's gonna be RED wine."
-    elif desicion_dict['Red(0)'] < desicion_dict['White(1)']:
-        final_decision += "It's gonna be WHITE wine."
-    else: 
-        final_decision += "Difficult to say, try to change query point"
+    votes = Counter(k_nearest_labels)
+    # print(f"Votes: {votes.most_common(2)[0][1]}")
+    # print(f"Votes: {votes.most_common(2)[1][1]}")
     
-    print(f"Индексы ближайших сосeдей из датасета: {closest_idx}")
-    print(f"Данные ближайших соседей из датасета по их индексу: {closest_from_dataset}")
-    print(f"Словать контроля решения: {desicion_dict}")
+    winner_label, winner_count = votes.most_common(1)[0]
+     
+    if len(votes) > 1 and votes.most_common(2)[0][1] == votes.most_common(2)[1][1]:
+        final_decision = "Difficult to say (tie!), try to change K"
+        
+    final_decision = f"It's gonna be {LABEL_MAP[winner_label]} wine."
+    
+    print(f"{k} closest: {closest_k_pairs}")
     print(f"Финальное решение алгоритма: {final_decision}")
     return final_decision
-   
-    
-    
 
+    
    
+# --- 2. "Новая" точка (которую мы хотим классифицировать) ---
+# У нее нет метки (label), только признаки (features)    
     
-    
+new_point = [0.5, 0.75]
+classification(new_point, wine_dataset,6) #white wine example
 
-find_nearest(new_point, wine_dataset, 3)
+point_2 = [0.75, 0.25]
+classification(point_2, wine_dataset, 7) # red wine sample
+

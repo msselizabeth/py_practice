@@ -19,3 +19,22 @@
 Как элегантно обновить счетчик в словаре?
 counts[word] = counts.get(word, 0) + 1
 '''
+
+import copy
+a = [1, [2, 3]]
+b = copy.copy(a)
+b[1].append(4)
+print(a)  # [1, [2, 3, 4]]
+
+
+
+
+my_list = [1, 2, {"name": "Gupalo Vasyl"}]
+copy_list = copy.copy(my_list)
+copy_list.append(4)
+print(f"Original list: {my_list}")
+print(f"Copy: {copy_list}")
+copy_list[2]["age"] = 45
+print(f"Original list: {my_list}")
+print(f"Copy: {copy_list}")
+
