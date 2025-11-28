@@ -29,3 +29,39 @@
 
 Это отличная задача на комбинацию словарей и list comprehensions.
 '''
+# tags_dict = {
+#   'python': 0,
+#   'ml': 1,
+#   'data': 2,
+#   'statistics': 3
+# }
+
+
+def encoding(strings: str) -> list:
+  #  initialize expected result
+  matrix = []
+  # fing unique values
+  unique_strs = set(strings)
+  #  Create a dict to have tag: index
+  tags_dict = {tag: index for index, tag in enumerate(unique_strs)}
+  
+  # loop in intital list(tags) 
+  for tag in strings:
+      # craete a vector with len from unique values 
+      vector = [0 for item in range(len(unique_strs))]
+      #  Find a vector position equals tag position(index) and assigning 1 instead of 0
+      vector[tags_dict[tag]] = 1
+      #  appen to final result(matrix)
+      matrix.append(vector)
+  
+  return matrix
+
+result = encoding(['python', 'ml', 'python', 'data', 'ml', 'statistics', "blue", 'red', 'black', 'pink'])
+print(result) #[
+#   [1, 0, 0, 0],  # 'python'
+#   [0, 1, 0, 0],  # 'ml'
+#   [1, 0, 0, 0],  # 'python'
+#   [0, 0, 1, 0],  # 'data'
+#   [0, 1, 0, 0],  # 'ml'
+#   [0, 0, 0, 1]  # 'statistics'
+# ]   
